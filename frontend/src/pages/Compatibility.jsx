@@ -1,4 +1,4 @@
-// Compatibility page — find friends with similar movie taste
+// Compatibility page — find users with similar movie taste
 import { useEffect, useState } from 'react';
 import { getAllUsers, getCompatibility } from '../services/api';
 import { Link } from 'react-router-dom';
@@ -11,7 +11,9 @@ function Compatibility() {
   const [compatData, setCompatData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
+  const [search, setSearch] = useState('');
 
+  // Fetch all users on mount
   useEffect(() => {
     getAllUsers()
       .then(res => setUsers(res.data))
@@ -19,6 +21,7 @@ function Compatibility() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Calculate compatibility when user selected
   const handleSelectUser = async (user) => {
     setSelectedUser(user);
     setCompatData(null);
@@ -33,7 +36,7 @@ function Compatibility() {
     }
   };
 
-  // Score badge color and label
+  // Score badge color and tier label
   const getScoreInfo = (score) => {
     if (score >= 80) return { color: '#10B981', label: 'Soulmate Tier 💖', bg: 'rgba(16,185,129,0.15)' };
     if (score >= 60) return { color: '#7C3AED', label: 'Great Match ✨', bg: 'rgba(124,58,237,0.15)' };
@@ -41,6 +44,11 @@ function Compatibility() {
     if (score >= 20) return { color: '#EF4444', label: 'Different Tastes 🤔', bg: 'rgba(239,68,68,0.15)' };
     return { color: '#6B7280', label: 'Not Enough Data 📊', bg: 'rgba(107,114,128,0.15)' };
   };
+
+  // Filter users by search input
+  const filteredUsers = users.filter(u =>
+    u.username.toLowerCase().includes(search.toLowerCase())
+  );
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen"
@@ -51,9 +59,10 @@ function Compatibility() {
   );
 
   return (
-    <div className="px-6 py-10 max-w-5xl mx-auto"
+    <div className="px-6 py-10 max-w-6xl mx-auto"
       style={{ backgroundColor: '#0B0F1A', minHeight: '100vh' }}>
 
+      {/* Header */}
       <div className="mb-8">
         <p className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-1">Social</p>
         <h1 className="text-3xl font-bold text-white">Film Compatibility</h1>
@@ -64,15 +73,33 @@ function Compatibility() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        {/* User list */}
-        <div className="rounded-2xl p-4"
+        {/* User list with search */}
+        <div className="rounded-2xl p-4 md:sticky md:top-24 md:self-start"
           style={{ backgroundColor: '#0F1623', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <h3 className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-3 px-2">All users</h3>
-          {users.length === 0 ? (
-            <p className="text-gray-500 text-sm px-2 py-4">No other users yet.</p>
+
+          <h3 className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-3 px-2">
+            All users ({users.length})
+          </h3>
+
+          {/* Search input */}
+          <div className="relative mb-3">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+            <input value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search users..."
+              className="w-full pl-9 pr-3 py-2 rounded-xl text-white text-sm outline-none"
+              style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            />
+          </div>
+
+          {/* User list */}
+          {filteredUsers.length === 0 ? (
+            <p className="text-gray-500 text-sm px-2 py-4 text-center">
+              {users.length === 0 ? 'No other users yet.' : 'No matches.'}
+            </p>
           ) : (
-            <div className="flex flex-col gap-1">
-              {users.map(u => (
+            <div className="flex flex-col gap-1 max-h-96 overflow-y-auto">
+              {filteredUsers.map(u => (
                 <button key={u._id} onClick={() => handleSelectUser(u)}
                   className="flex items-center gap-3 p-2 rounded-xl text-left transition-all"
                   style={{
@@ -83,7 +110,12 @@ function Compatibility() {
                     style={{ background: 'linear-gradient(135deg, #7C3AED, #E879F9)' }}>
                     {u.username?.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-white text-sm font-medium">{u.username}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-medium truncate">{u.username}</p>
+                    {u.streak?.count > 0 && (
+                      <p className="text-gray-500 text-xs">🔥 {u.streak.count} day streak</p>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
@@ -92,6 +124,7 @@ function Compatibility() {
 
         {/* Compatibility result */}
         <div className="md:col-span-2">
+          {/* Empty state */}
           {!selectedUser && (
             <div className="text-center py-20 rounded-2xl"
               style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
@@ -101,6 +134,7 @@ function Compatibility() {
             </div>
           )}
 
+          {/* Loading state */}
           {calculating && (
             <div className="text-center py-20 rounded-2xl"
               style={{ backgroundColor: '#0F1623', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -110,11 +144,12 @@ function Compatibility() {
             </div>
           )}
 
+          {/* Result card */}
           {compatData && !calculating && (
             <div className="rounded-2xl p-8"
               style={{ backgroundColor: '#0F1623', border: '1px solid rgba(255,255,255,0.06)' }}>
 
-              {/* Score display */}
+              {/* Avatar comparison */}
               <div className="text-center mb-6">
                 <div className="inline-flex items-center gap-3 mb-4">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold"
@@ -127,7 +162,9 @@ function Compatibility() {
                     🤝
                   </div>
                 </div>
-                <p className="text-gray-400 text-sm mb-1">Your taste compatibility with {selectedUser.username}</p>
+                <p className="text-gray-400 text-sm mb-1">
+                  Your taste compatibility with <span className="text-white font-medium">{selectedUser.username}</span>
+                </p>
 
                 {/* Big score */}
                 <div className="my-6">
@@ -141,7 +178,7 @@ function Compatibility() {
                   </p>
                 </div>
 
-                {/* Tier badge */}
+                {/* Tier label */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
                   style={{
                     backgroundColor: getScoreInfo(compatData.score).bg,
@@ -175,7 +212,7 @@ function Compatibility() {
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     {compatData.commonItems.map(item => (
                       <Link key={item.tmdbId} to={`/${item.mediaType}/${item.tmdbId}`}
-                        className="block transition-transform hover:scale-105">
+                        className="block transition-transform hover:scale-105 relative group">
                         {item.posterPath ? (
                           <img src={`${IMAGE_URL}${item.posterPath}`} alt={item.title}
                             className="w-full rounded-lg object-cover"
@@ -184,16 +221,31 @@ function Compatibility() {
                           <div className="w-full rounded-lg flex items-center justify-center text-2xl"
                             style={{ aspectRatio: '2/3', backgroundColor: '#1E2A45' }}>🎬</div>
                         )}
+                        {/* Title shown on hover */}
+                        <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2"
+                          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
+                          <p className="text-white text-xs font-medium leading-tight">{item.title}</p>
+                        </div>
                       </Link>
                     ))}
                   </div>
+                  <p className="text-gray-500 text-xs mt-3">
+                    Click any movie to view details and add to your own watchlist
+                  </p>
                 </div>
               )}
 
+              {/* No common movies hint */}
               {compatData.breakdown.commonWatched === 0 && (
-                <p className="text-center text-gray-500 text-sm mt-6">
-                  You haven't watched any of the same movies yet — get watching!
-                </p>
+                <div className="mt-6 p-4 rounded-xl text-center"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
+                  <p className="text-gray-400 text-sm">
+                    You haven't watched any of the same movies yet
+                  </p>
+                  <p className="text-gray-600 text-xs mt-1">
+                    Start watching to build up compatibility data
+                  </p>
+                </div>
               )}
             </div>
           )}

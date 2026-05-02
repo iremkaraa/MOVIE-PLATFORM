@@ -14,6 +14,7 @@ function Watchlist() {
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [filter, setFilter] = useState('all');
 
+  // Fetch user's watchlist on mount
   useEffect(() => {
     getWatchlist()
       .then(res => setItems(res.data))
@@ -21,6 +22,7 @@ function Watchlist() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Mark a title as watched — updates streak and badges on backend
   const handleMarkWatched = async (tmdbId) => {
     try {
       await markAsWatched(tmdbId);
@@ -32,6 +34,7 @@ function Watchlist() {
     }
   };
 
+  // Remove an item from the watchlist
   const handleRemove = async (tmdbId) => {
     try {
       await removeFromWatchlist(tmdbId);
@@ -41,6 +44,7 @@ function Watchlist() {
     }
   };
 
+  // Filter items based on watched state
   const filtered = items.filter(item => {
     if (filter === 'watched') return item.watched;
     if (filter === 'unwatched') return !item.watched;
@@ -65,9 +69,10 @@ function Watchlist() {
         <div>
           <p className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-1">Your collection</p>
           <h1 className="text-3xl font-bold text-white">My Watchlist</h1>
-          <p className="text-gray-500 text-sm mt-1">{items.length} titles saved</p>
+          <p className="text-gray-500 text-sm mt-1">{items.length} {items.length === 1 ? 'title saved' : 'titles saved'}</p>
         </div>
 
+        {/* Voting button — only when 2+ unwatched items exist */}
         {unwatchedItems.length >= 2 && (
           <button onClick={() => setShowVoteModal(true)}
             className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm transition-all hover:opacity-90"
@@ -113,34 +118,46 @@ function Watchlist() {
         </div>
       )}
 
-      {/* Grid */}
+      {/* Grid — proper aspect ratio for posters */}
       {filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {filtered.map(item => (
             <div key={item.tmdbId} className="rounded-xl overflow-hidden transition-all hover:scale-[1.02]"
               style={{ backgroundColor: '#0F1623', border: '1px solid rgba(255,255,255,0.06)' }}>
 
-              <Link to={`/${item.mediaType}/${item.tmdbId}`} className="block relative"
-                style={{ aspectRatio: '16/10' }}>
+              {/* Poster — 2:3 aspect ratio (standard movie poster) */}
+              <Link to={`/${item.mediaType}/${item.tmdbId}`} className="block relative w-full"
+                style={{ paddingTop: '150%' }}>
                 {item.posterPath ? (
                   <img src={`${IMAGE_URL}${item.posterPath}`} alt={item.title}
-                    className="w-full h-full object-cover" />
+                    className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl"
+                  <div className="absolute inset-0 flex items-center justify-center text-3xl"
                     style={{ backgroundColor: '#1E2A45' }}>🎬</div>
                 )}
+
+                {/* Watched overlay badge */}
                 {item.watched && (
                   <div className="absolute top-2 right-2 px-2 py-1 rounded-lg text-xs font-medium"
                     style={{ backgroundColor: 'rgba(5,150,105,0.9)', backdropFilter: 'blur(4px)', color: 'white' }}>
                     ✓ Watched
                   </div>
                 )}
+
+                {/* Rating badge */}
+                {item.voteAverage > 0 && (
+                  <div className="absolute top-2 left-2 px-2 py-1 rounded-lg text-xs font-semibold"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', color: '#E879F9' }}>
+                    ★ {item.voteAverage?.toFixed(1)}
+                  </div>
+                )}
               </Link>
 
+              {/* Info & buttons */}
               <div className="p-3">
                 <p className="text-white font-medium text-sm truncate">{item.title}</p>
                 <p className="text-gray-500 text-xs mt-0.5">
-                  {item.mediaType === 'tv' ? 'TV Show' : 'Movie'} · ★ {item.voteAverage?.toFixed(1)}
+                  {item.mediaType === 'tv' ? 'TV Show' : 'Movie'}
                 </p>
 
                 <div className="flex gap-2 mt-3">
@@ -163,6 +180,7 @@ function Watchlist() {
         </div>
       )}
 
+      {/* Vote modal */}
       {showVoteModal && (
         <VoteModal items={unwatchedItems} currentUserId={user?._id}
           onClose={() => setShowVoteModal(false)} />

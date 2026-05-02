@@ -38,4 +38,29 @@ export const getMyBadges = () => api.get('/badges/me');
 export const getAllUsers = () => api.get('/auth/users');
 export const getCompatibility = (userId) => api.get(`/auth/compatibility/${userId}`);
 
+// Admin endpoints
+export const adminGetUsers = () => api.get('/auth/admin/users');
+export const adminGetReviews = () => api.get('/auth/admin/reviews');
+export const adminGetStats = () => api.get('/auth/admin/stats');
+export const adminUpdateUserRole = (id, role) => api.patch(`/auth/admin/users/${id}/role`, { role });
+export const adminDeleteUser = (id) => api.delete(`/auth/admin/users/${id}`);
+export const adminDeleteReview = (id) => api.delete(`/auth/admin/reviews/${id}`);
+
+
+// Friend endpoints
+export const getFriends = () => api.get('/friends');
+export const getPendingRequests = () => api.get('/friends/pending');
+export const getSentRequests = () => api.get('/friends/sent');
+export const sendFriendRequest = (userId) => api.post(`/friends/request/${userId}`);
+export const respondToFriendRequest = (id, action) => api.patch(`/friends/respond/${id}`, { action });
+export const removeFriendApi = (userId) => api.delete(`/friends/${userId}`);
+
+// Collaborative list endpoints
+export const getMyCollabLists = () => api.get('/collab');
+export const getCollabList = (id) => api.get(`/collab/${id}`);
+export const createCollabList = (data) => api.post('/collab', data);
+export const deleteCollabList = (id) => api.delete(`/collab/${id}`);
+export const addItemToCollab = (id, data) => api.post(`/collab/${id}/items`, data);
+export const removeItemFromCollab = (id, tmdbId) => api.delete(`/collab/${id}/items/${tmdbId}`);
+export const voteCollabItem = (id, tmdbId) => api.post(`/collab/${id}/items/${tmdbId}/vote`);
 export default api;

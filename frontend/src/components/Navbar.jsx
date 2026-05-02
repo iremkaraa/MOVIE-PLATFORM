@@ -1,81 +1,97 @@
-// Navbar — sticky top navigation with active link highlighting
+// Navbar — slim, professional, Netflix-inspired navigation
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from 'react';
 
 function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+
+  // Add background when scrolled past hero
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => { logout(); navigate('/'); };
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
-  // Build navigation links based on user role
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/search', label: 'Discover' },
+    { path: '/vibe', label: 'Vibe Match', highlight: true },
     ...(user ? [
       { path: '/watchlist', label: 'Watchlist' },
-      { path: '/compatibility', label: 'Friends' }
+      { path: '/collab', label: 'Collab' },
+      { path: '/friends', label: 'Friends' },
+      { path: '/compatibility', label: 'Compatibility' },
     ] : []),
     ...(user?.role === 'admin' ? [{ path: '/admin', label: 'Admin' }] : []),
   ];
 
   return (
-    <nav className="sticky top-0 z-50 px-6 py-4 flex items-center justify-between"
-      style={{ backgroundColor: 'rgba(11,15,26,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+    <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-3 flex items-center justify-between transition-all duration-300"
+      style={{
+        backgroundColor: scrolled ? 'rgba(11,15,26,0.97)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(20px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : 'none',
+      }}>
 
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base"
-          style={{ background: 'linear-gradient(135deg, #7C3AED, #E879F9)' }}>
-          🎬
-        </div>
-        <span className="text-lg font-bold tracking-tight">
+        <span className="text-3xl font-bold tracking-tight select-none" style={{ fontFamily: '"Playfair Display", serif' }}>
           <span style={{ color: '#E879F9' }}>Mood</span>
           <span className="text-white">flix</span>
         </span>
       </Link>
 
-      {/* Center links */}
+      {/* Center links — slim */}
       <div className="hidden md:flex items-center gap-1">
-        {navLinks.map(({ path, label }) => (
+        {navLinks.map(({ path, label, highlight }) => (
           <Link key={path} to={path}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+            className="px-3 py-2 rounded-lg text-xs font-bold transition-all relative whitespace-nowrap"
             style={{
-              color: isActive(path) ? '#ffffff' : '#6B7280',
-              backgroundColor: isActive(path) ? 'rgba(124,58,237,0.15)' : 'transparent',
+              color: isActive(path) ? '#ffffff' : highlight ? '#E879F9' : '#9CA3AF',
+              backgroundColor: isActive(path) ? 'rgba(255,255,255,0.08)' : 'transparent',
             }}>
             {label}
+            {/* Active underline */}
+            {isActive(path) && (
+              <span className="absolute bottom-0 left-3 right-3 h-px rounded-full"
+                style={{ backgroundColor: '#E879F9' }} />
+            )}
           </Link>
         ))}
       </div>
 
-      {/* Right side — auth */}
-      <div className="flex items-center gap-2">
+      {/* Right side */}
+      <div className="flex items-center gap-3">
         {user ? (
           <>
             <Link to="/profile"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all hover:bg-white/5">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-white/5 outline-none">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #7C3AED, #E879F9)' }}>
                 {user.username?.charAt(0).toUpperCase()}
               </div>
-              <span className="text-sm text-gray-300 hidden sm:block">{user.username}</span>
+              <span className="text-sm font-semibold text-gray-300 hidden sm:block">{user.username}</span>
             </Link>
             <button onClick={handleLogout}
-              className="px-3 py-2 rounded-xl text-sm text-gray-500 hover:text-gray-300 transition-colors">
+              className="px-5 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-300 transition-colors\">
               Sign out
             </button>
           </>
         ) : (
           <>
             <Link to="/login"
-              className="px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-white transition-colors">
+              className="px-5 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-colors">
               Sign in
             </Link>
             <Link to="/register"
-              className="px-4 py-2 rounded-xl text-sm text-white font-medium transition-all hover:opacity-90"
+              className="px-5 py-2 rounded-lg text-sm font-bold text-white"
               style={{ background: 'linear-gradient(135deg, #7C3AED, #E879F9)' }}>
               Sign Up
             </Link>
