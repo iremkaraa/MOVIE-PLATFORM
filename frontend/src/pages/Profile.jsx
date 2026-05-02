@@ -25,8 +25,7 @@ function Profile() {
   );
 
   return (
-    <div className="px-6 py-10 max-w-3xl mx-auto" style={{ backgroundColor: '#0B0F1A', minHeight: '100vh' }}>
-
+<div className="px-6 pt-32 pb-10 max-w-3xl mx-auto" style={{ backgroundColor: '#0B0F1A', minHeight: '100vh' }}>
       {/* Header */}
       <div className="flex items-center gap-5 mb-10">
         <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-3xl font-bold flex-shrink-0"

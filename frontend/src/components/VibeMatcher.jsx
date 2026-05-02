@@ -97,11 +97,7 @@ function VibeMatcher() {
             style={{ bottom: '-80px', left: '-30px', width: '250px', height: '250px', borderRadius: '50%',
               background: 'radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%)' }} />
 
-          {/* Decorative emojis */}
-          <div className="absolute top-6 right-8 opacity-30 text-4xl pointer-events-none animate-pulse">😢</div>
-          <div className="absolute top-16 right-24 opacity-20 text-3xl pointer-events-none">🔥</div>
-          <div className="absolute bottom-8 right-16 opacity-25 text-3xl pointer-events-none">💕</div>
-
+         
           {/* Card content */}
           <div className="relative z-10 flex items-center gap-6 p-8">
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:rotate-6"

@@ -20,6 +20,8 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/watchlist', require('./routes/watchlist'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/badges', require('./routes/badges'));
+app.use('/api/friends', require('./routes/friends'));
+app.use('/api/collab', require('./routes/collab'));
 
 // Base route — used to verify the server is running
 app.get('/', (req, res) => {

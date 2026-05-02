@@ -1,8 +1,11 @@
-// MovieDetail page — full info, cast, reviews with spoiler support
+// MovieDetail page — full info, cast, reviews with spoiler support, watchlist & collab integration
 import { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { getMovieDetails, getTVDetails } from '../services/tmdb';
-import { getReviews, createReview, addToWatchlist } from '../services/api';
+import {
+  getReviews, createReview, addToWatchlist,
+  getMyCollabLists, addItemToCollab
+} from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ReviewCard from '../components/ReviewCard';
 import MovieCard from '../components/MovieCard';
@@ -13,6 +16,7 @@ const IMAGE_URL = 'https://image.tmdb.org/t/p/w500';
 function MovieDetail() {
   const { id } = useParams();
   const location = useLocation();
+  // Determine media type from URL (movie or TV series)
   const isTV = location.pathname.startsWith('/tv/');
   const { user } = useAuth();
 
@@ -24,6 +28,12 @@ function MovieDetail() {
   const [reviewError, setReviewError] = useState('');
   const [error, setError] = useState(false);
 
+  // Collaborative list integration
+  const [myLists, setMyLists] = useState([]);
+  const [showCollabMenu, setShowCollabMenu] = useState(false);
+  const [collabMessage, setCollabMessage] = useState('');
+
+  // Fetch movie/TV details and reviews on load
   useEffect(() => {
     setLoading(true);
     setError(false);
@@ -44,6 +54,14 @@ function MovieDetail() {
       .finally(() => setLoading(false));
   }, [id, isTV]);
 
+  // Load user's collab lists for "add to" menu — only when logged in
+  useEffect(() => {
+    if (user) {
+      getMyCollabLists().then(res => setMyLists(res.data)).catch(() => {});
+    }
+  }, [user]);
+
+  // Add this title to user's personal watchlist
   const handleAddToWatchlist = async () => {
     if (!user) return;
     try {
@@ -62,6 +80,27 @@ function MovieDetail() {
     }
   };
 
+  // Add this title to a chosen collaborative list
+  const handleAddToCollab = async (listId) => {
+    try {
+      await addItemToCollab(listId, {
+        tmdbId: media.id,
+        mediaType: isTV ? 'tv' : 'movie',
+        title: media.title || media.name,
+        posterPath: media.poster_path || '',
+        overview: media.overview || '',
+        voteAverage: media.vote_average || 0,
+      });
+      setCollabMessage('Added to list ✓');
+      setShowCollabMenu(false);
+      setTimeout(() => setCollabMessage(''), 2500);
+    } catch (err) {
+      setCollabMessage(err.response?.data?.message || 'Failed to add');
+      setTimeout(() => setCollabMessage(''), 2500);
+    }
+  };
+
+  // Submit a new review
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     setReviewError('');
@@ -112,6 +151,7 @@ function MovieDetail() {
         ) : (
           <div className="w-full h-full" style={{ backgroundColor: '#1E2A45' }} />
         )}
+        {/* Gradient overlay */}
         <div className="absolute inset-0"
           style={{ background: 'linear-gradient(to top, #0B0F1A 30%, transparent 100%)' }} />
       </div>
@@ -119,6 +159,7 @@ function MovieDetail() {
       <div className="px-6 md:px-12 -mt-64 relative z-10 pb-16">
         <div className="flex flex-col md:flex-row gap-8 max-w-5xl">
 
+          {/* Poster */}
           {media.poster_path && (
             <div className="flex-shrink-0">
               <img src={`${IMAGE_URL}${media.poster_path}`} alt={title}
@@ -127,6 +168,7 @@ function MovieDetail() {
             </div>
           )}
 
+          {/* Info */}
           <div className="flex-1 pt-4 md:pt-32">
             <div className="flex items-center gap-3 mb-2">
               <span className="px-3 py-1 rounded-full text-xs font-medium"
@@ -139,11 +181,15 @@ function MovieDetail() {
 
             <h1 className="text-4xl font-bold text-white mb-3">{title}</h1>
 
+            {/* Star rating display */}
             {media.vote_average > 0 && (
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex">
                   {[1,2,3,4,5].map(s => (
-                    <span key={s} style={{ color: s <= Math.round(media.vote_average / 2) ? '#E879F9' : '#374151', fontSize: '18px' }}>★</span>
+                    <span key={s} style={{
+                      color: s <= Math.round(media.vote_average / 2) ? '#E879F9' : '#374151',
+                      fontSize: '18px'
+                    }}>★</span>
                   ))}
                 </div>
                 <span className="text-white font-semibold">{media.vote_average?.toFixed(1)}</span>
@@ -151,6 +197,7 @@ function MovieDetail() {
               </div>
             )}
 
+            {/* Genres */}
             {media.genres?.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {media.genres.map(g => (
@@ -164,7 +211,8 @@ function MovieDetail() {
 
             <p className="text-gray-300 leading-relaxed mb-6 max-w-2xl">{media.overview}</p>
 
-            <div className="flex gap-3 flex-wrap">
+            {/* Action buttons */}
+            <div className="flex gap-3 flex-wrap items-start">
               {user && (
                 <button onClick={handleAddToWatchlist}
                   className="px-6 py-3 rounded-xl text-white font-medium text-sm transition-all"
@@ -172,6 +220,34 @@ function MovieDetail() {
                   {addedToList ? '✓ In Watchlist' : '+ Add to Watchlist'}
                 </button>
               )}
+
+              {/* Collab list dropdown — only if user has lists */}
+              {user && myLists.length > 0 && (
+                <div className="relative">
+                  <button onClick={() => setShowCollabMenu(!showCollabMenu)}
+                    className="px-6 py-3 rounded-xl text-white font-medium text-sm"
+                    style={{ backgroundColor: '#1E2A45', border: '1px solid #2D3E6B' }}>
+                    + Add to collab list ▾
+                  </button>
+                  {showCollabMenu && (
+                    <div className="absolute top-full mt-2 left-0 rounded-xl overflow-hidden z-20 min-w-56"
+                      style={{
+                        backgroundColor: '#0F1623',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+                      }}>
+                      {myLists.map(list => (
+                        <button key={list._id}
+                          onClick={() => handleAddToCollab(list._id)}
+                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 transition-colors">
+                          {list.name} <span className="text-gray-500 text-xs">({list.items.length})</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {trailer && (
                 <a href={`https://youtube.com/watch?v=${trailer.key}`}
                   target="_blank" rel="noreferrer"
@@ -180,16 +256,25 @@ function MovieDetail() {
                   ▶ Watch Trailer
                 </a>
               )}
+
               {!user && (
                 <p className="text-gray-500 text-sm self-center">
                   <a href="/login" style={{ color: '#E879F9' }}>Sign in</a> to add to watchlist
                 </p>
               )}
+
+              {/* Toast feedback */}
+              {collabMessage && (
+                <div className="px-4 py-3 rounded-xl text-sm text-white"
+                  style={{ backgroundColor: 'rgba(16,185,129,0.95)' }}>
+                  {collabMessage}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Cast */}
+        {/* Cast section */}
         {media.credits?.cast?.length > 0 && (
           <div className="mt-12 max-w-5xl">
             <h2 className="text-xl font-bold text-white mb-5">Cast</h2>
@@ -212,7 +297,7 @@ function MovieDetail() {
           </div>
         )}
 
-        {/* Similar */}
+        {/* Similar titles */}
         {media.similar?.results?.length > 0 && (
           <div className="mt-12 max-w-5xl">
             <h2 className="text-xl font-bold text-white mb-5">You Might Also Like</h2>
@@ -224,23 +309,30 @@ function MovieDetail() {
           </div>
         )}
 
-        {/* Reviews */}
+        {/* Reviews section */}
         <div className="mt-12 max-w-3xl">
           <h2 className="text-xl font-bold text-white mb-5">Reviews</h2>
 
+          {/* Review form — only for logged in users */}
           {user && (
             <form onSubmit={handleReviewSubmit}
               className="p-5 rounded-2xl mb-6"
               style={{ backgroundColor: '#0F1623', border: '1px solid rgba(255,255,255,0.06)' }}>
               <p className="text-white font-medium mb-4">Write a Review</p>
 
-              {/* Star rating */}
+              {/* Star rating selector */}
               <div className="flex items-center gap-1 mb-4">
                 {[1,2,3,4,5].map(star => (
                   <button key={star} type="button"
                     onClick={() => setReviewForm(f => ({ ...f, rating: star }))}
                     className="transition-transform hover:scale-110"
-                    style={{ fontSize: '28px', color: star <= reviewForm.rating ? '#E879F9' : '#374151', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    style={{
+                      fontSize: '28px',
+                      color: star <= reviewForm.rating ? '#E879F9' : '#374151',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}>
                     ★
                   </button>
                 ))}
@@ -249,8 +341,16 @@ function MovieDetail() {
 
               {/* Spoiler hint */}
               <div className="mb-3 p-3 rounded-xl text-xs"
-                style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: '#FCD34D' }}>
-                💡 Hide spoilers by wrapping text with <code style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '1px 6px', borderRadius: '4px' }}>||spoiler text||</code>
+                style={{
+                  backgroundColor: 'rgba(245,158,11,0.08)',
+                  border: '1px solid rgba(245,158,11,0.2)',
+                  color: '#FCD34D'
+                }}>
+                💡 Hide spoilers by wrapping text with <code style={{
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  padding: '1px 6px',
+                  borderRadius: '4px'
+                }}>||spoiler text||</code>
               </div>
 
               <textarea
@@ -272,6 +372,7 @@ function MovieDetail() {
             </form>
           )}
 
+          {/* Reviews list */}
           <div className="flex flex-col gap-3">
             {reviews.length === 0 ? (
               <p className="text-gray-500 text-sm">No reviews yet. Be the first to review!</p>

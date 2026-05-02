@@ -1,9 +1,9 @@
-// StreakBadge — displays user's watch streak and earned badges
+// StreakBadge — displays streak, total watched, and earned badges with descriptions
 const BADGE_INFO = {
   '7-day-streak':  { emoji: '🔥', label: '7-Day Streak',  desc: 'Watched 7 days in a row' },
   '30-day-streak': { emoji: '👑', label: '30-Day Streak', desc: 'Watched 30 days in a row' },
-  'watched-10':    { emoji: '🎬', label: 'Movie Buff',    desc: 'Watched 10 titles' },
-  'watched-50':    { emoji: '🏆', label: 'Cinema Legend', desc: 'Watched 50 titles' },
+  'watched-10':    { emoji: '🎯', label: 'Getting Started', desc: 'Watched 10 titles' },
+  'watched-50':    { emoji: '🏆', label: 'Cinema Lover', desc: 'Watched 50 titles' },
 };
 
 function StreakBadge({ streak, badges, totalWatched }) {
@@ -11,28 +11,33 @@ function StreakBadge({ streak, badges, totalWatched }) {
     <div className="rounded-2xl p-6"
       style={{ backgroundColor: '#0F1623', border: '1px solid rgba(255,255,255,0.06)' }}>
 
-      {/* Stats row */}
+      {/* Stats with tooltips */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)' }}>
+        <div className="p-4 rounded-xl group relative cursor-help"
+          style={{ backgroundColor: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)' }}
+          title="Number of consecutive days you've marked at least one title as watched">
           <div className="flex items-center gap-2 mb-2">
             <span style={{ fontSize: '20px' }}>🔥</span>
             <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Streak</p>
+            <span className="text-gray-600 text-xs">ⓘ</span>
           </div>
           <p className="text-3xl font-bold text-white">{streak?.count || 0}</p>
           <p className="text-gray-500 text-xs mt-1">consecutive days</p>
         </div>
 
-        <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(232,121,249,0.06)', border: '1px solid rgba(232,121,249,0.15)' }}>
+        <div className="p-4 rounded-xl group relative cursor-help"
+          style={{ backgroundColor: 'rgba(232,121,249,0.06)', border: '1px solid rgba(232,121,249,0.15)' }}
+          title="Total number of movies and series you've marked as watched">
           <div className="flex items-center gap-2 mb-2">
             <span style={{ fontSize: '20px' }}>🎬</span>
             <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Watched</p>
+            <span className="text-gray-600 text-xs">ⓘ</span>
           </div>
           <p className="text-3xl font-bold text-white">{totalWatched || 0}</p>
           <p className="text-gray-500 text-xs mt-1">titles total</p>
         </div>
       </div>
 
-      {/* Badges */}
       <div>
         <h3 className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-3">Achievements</h3>
         {badges?.length === 0 || !badges ? (
