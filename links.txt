@@ -1,0 +1,3 @@
+GitHub Repository: https://github.com/iremkaraa/MOVIE-PLATFORM
+Live Demo (Frontend): https://movie-platform-iota.vercel.app
+Backend API: https://movie-platform-e3nf.onrender.com
