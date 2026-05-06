@@ -17,7 +17,6 @@ function Friends() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
-  // Load all friend-related data on mount
   const loadAll = async () => {
     try {
       const [friendsRes, pendingRes, sentRes, usersRes] = await Promise.all([
@@ -26,12 +25,18 @@ function Friends() {
         getSentRequests(),
         getAllUsers(),
       ]);
-      setFriends(friendsRes.data);
-      setPending(pendingRes.data);
-      setSent(sentRes.data);
-      setAllUsers(usersRes.data);
+      // Null check — ensure arrays even if API fails
+      setFriends(friendsRes.data || []);
+      setPending(pendingRes.data || []);
+      setSent(sentRes.data || []);
+      setAllUsers(usersRes.data || []);
     } catch (err) {
       console.error('Friends load error:', err);
+      // Set empty arrays on error to prevent null crashes
+      setFriends([]);
+      setPending([]);
+      setSent([]);
+      setAllUsers([]);
     } finally {
       setLoading(false);
     }
